@@ -3,9 +3,11 @@ members = ["crates/*"]
 resolver = "2"
 edition = "2024"
 
+
 [workspace.dependencies]
 iced = { version = "0.14.0-dev", default-features = false, features = [
   "wgpu",
+  "canvas",
   "tiny-skia",
   "fira-sans",
   "tokio",
@@ -13,6 +15,7 @@ iced = { version = "0.14.0-dev", default-features = false, features = [
   "advanced",
   "image",
 ] }
+laurel_common = { path = "crates/laurel_common" }
 
 [patch.crates-io]
 iced = { git = "https://github.com/iced-rs/iced.git" }
