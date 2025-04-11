@@ -20,12 +20,13 @@ pub fn main() -> iced::Result {
         )
         .init();
 
-    iced::application("Laurel", Editor::update, Editor::view)
+    iced::application(|| Editor::new(()), Editor::update, Editor::view)
+        .title("Laurel LSP test")
         .theme(Editor::theme)
         // .scale_factor(Editor::scale_factor)
         .subscription(Editor::subscription)
         // .settings(settings(&config_load))
-        .run_with(|| Editor::new(()))
+        .run()
         .inspect_err(|err| tracing::error!(error = ?err, "Iced error"))?;
 
     Ok(())
