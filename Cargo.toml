@@ -24,6 +24,20 @@ laurel_common = { path = "crates/laurel_common" }
 laurel_editor = { path = "crates/laurel_editor" }
 laurel_lsp = { path = "crates/laurel_lsp" }
 
+async-lsp = { version = "0.2.2", features = ["tracing"] }
+tree-sitter = "0.20.10"
+
+tokio = { version = "1.44.2", no-default-features = true, features = [
+  "full",
+  "tracing",
+] }
+tokio-util = { version = "0.7.14", features = ["compat"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tower = "0.5.2"
+
+pretty_assertions = "1.4.1"
+
 [patch.crates-io]
 iced = { git = "https://github.com/iced-rs/iced.git" }
 iced_graphics = { git = "https://github.com/iced-rs/iced.git" }

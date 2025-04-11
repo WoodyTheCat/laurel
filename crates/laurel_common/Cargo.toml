@@ -6,10 +6,8 @@ edition = "2024"
 [dependencies]
 iced.workspace = true
 
-async-lsp = { version = "0.2.2", features = ["tracing"] }
-tree-sitter = "0.20.10"
-ropey = "1.6.0"
-unicode-segmentation = "1"
+async-lsp.workspace = true
+tree-sitter.workspace = true
 
 [dev-dependencies]
-pretty_assertions = "1.4.1"
+pretty_assertions.workspace = true

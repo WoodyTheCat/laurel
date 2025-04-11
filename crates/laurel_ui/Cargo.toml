@@ -7,3 +7,5 @@ edition = "2024"
 iced.workspace = true
 
 laurel_common.workspace = true
+laurel_editor.workspace = true
+laurel_lsp.workspace = true
