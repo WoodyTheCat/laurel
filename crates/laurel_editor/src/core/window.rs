@@ -1,6 +1,6 @@
 use iced::widget::scrollable::AbsoluteOffset;
 
-use super::position::Cursor;
+use laurel_common::text::Cursor;
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct VirtualWindow {

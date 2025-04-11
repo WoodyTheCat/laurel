@@ -6,12 +6,12 @@ use iced::{
     },
     overlay, Alignment, Font, Length, Padding, Pixels, Point, Size, Vector,
 };
-use laurel_common::{Element, LaurelTheme};
-
-use crate::{
-    core::position::CursorMessage,
-    core::{document::Document, position::Position},
+use laurel_common::{
+    text::{CursorMessage, Position},
+    Element, LaurelTheme,
 };
+
+use crate::core::document::Document;
 
 use super::{
     floating_text::floating_overlay::FloatingOverlay, textbox::Textbox, view_port::ViewPortMessage,

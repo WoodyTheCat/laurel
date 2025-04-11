@@ -2,7 +2,7 @@ use crate::highlighter::HighlightItem;
 use iced::Color;
 use std::vec::IntoIter;
 
-use crate::core::position::Position;
+use laurel_common::text::Position;
 
 pub struct ColorSelector;
 
@@ -80,8 +80,9 @@ impl ColorSelector {
 }
 #[cfg(test)]
 mod color_selector_tests {
-    use crate::{core::position::Position, highlighter::HighlightItem};
+    use crate::highlighter::HighlightItem;
     use iced::Color;
+    use laurel_common::text::Position;
     use pretty_assertions::assert_eq;
     use tree_sitter::Range;
 

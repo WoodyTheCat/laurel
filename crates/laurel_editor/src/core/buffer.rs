@@ -1,18 +1,18 @@
 use crate::{
     highlighter::{Highlighter, HighlighterConfig},
-    lsp::diagnostics::{ClientDiagnostics, Issue},
     Message,
 };
 use iced::{clipboard, widget::text, Task};
+use laurel_lsp::diagnostics::{ClientDiagnostics, Issue};
 use ropey::iter::Lines;
 
 use super::{
     document::{ByteRange, Document},
     document_change::DocumentChange,
-    position::{Cursor, Position},
-    selection::{Range, Selection},
     window::{MoveDirectionX, MoveDirectionY, VirtualWindow},
 };
+
+use laurel_common::text::{Cursor, Position, Range, Selection};
 
 pub struct Buffer {
     document: Document,
@@ -24,11 +24,11 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(buffer: Document, tree: HighlighterConfig) -> Self {
+    pub fn new(document: Document, highlighter: HighlighterConfig) -> Self {
         let height = text::LineHeight::default().to_absolute(iced::Pixels(14.0));
         Self {
-            document: buffer,
-            highlighter: tree,
+            document,
+            highlighter,
             cursor: Cursor::default(),
             window: VirtualWindow::new().set_lineheight(height.0),
             selection: Selection::default(),

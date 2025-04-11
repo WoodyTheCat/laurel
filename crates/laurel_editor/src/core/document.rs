@@ -1,6 +1,5 @@
 use std::io::Error;
 
-use crate::lsp::file_path;
 use async_lsp::lsp_types::Url;
 use ropey::iter::Lines;
 use ropey::{Rope, RopeSlice};
@@ -8,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::position::Position;
+use laurel_common::text::Position;
 
 pub struct ByteRange {
     pub start: usize,

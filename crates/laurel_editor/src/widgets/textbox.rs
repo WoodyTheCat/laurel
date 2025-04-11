@@ -13,8 +13,6 @@ use laurel_common::LaurelTheme;
 use crate::core::buffer::Buffer;
 use crate::core::buffer::TextInfo;
 use crate::core::document_change::DocumentChange;
-use crate::core::position::Cursor;
-use crate::core::position::Position;
 use crate::highlighter::HighlightItem;
 
 use crate::Message;
@@ -23,12 +21,15 @@ use crate::VirtualWindow;
 
 use crate::highlighter::color_selector::ColorSelector;
 
-use crate::lsp::LspClientNotification;
+use laurel_lsp::LspClientNotification;
 
 use super::floating_text::floating_text_element::FloatingElement;
 use super::floating_text::floating_text_element::FloatingText;
 
-use laurel_common::{Canvas, Element};
+use laurel_common::{
+    text::{Cursor, Position},
+    Canvas, Element,
+};
 
 pub struct Textbox {
     buffer: Buffer,

@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum LspClientError {
-    #[error("Failed Initialisation: `{0}`")]
-    FailedInitialisation(String),
+    #[error("Failed Initialization: `{0}`")]
+    FailedInitialization(String),
     #[error("Process Failure: `{0}`")]
     ProcessFailure(String),
     #[error("Process Failure: `{0}`")]

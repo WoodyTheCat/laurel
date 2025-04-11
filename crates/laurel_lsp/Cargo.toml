@@ -1,0 +1,21 @@
+[package]
+name = "laurel_lsp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+iced.workspace = true
+laurel_common.workspace = true
+
+futures = "0.3.28"
+jsonrpc-lite = "0.6.0"
+thiserror = "1.0.51"
+
+async-lsp = { version = "0.2.2", features = ["tracing"] }
+tokio = { version = "1.44.2", features = ["full", "tracing"] }
+tokio-util = { version = "0.7.14", features = ["compat"] }
+tower = "0.5.2"
+
+
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }

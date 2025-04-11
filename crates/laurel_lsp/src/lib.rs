@@ -1,10 +1,12 @@
 use std::{fs, path::PathBuf};
 
 use async_lsp::lsp_types::Url;
-use diagnostics::ClientDiagnostics;
-use tokio::sync::mpsc::{self, error::SendError};
+pub use diagnostics::{ClientDiagnostics, Issue, Severity};
+use tokio::sync::mpsc::{self};
 
-use crate::core::selection::Range;
+use laurel_common::text::Range;
+
+pub use connect::connect;
 
 pub mod client;
 pub mod connect;
@@ -12,18 +14,19 @@ pub mod diagnostics;
 pub mod error;
 
 #[derive(Debug, Clone)]
-pub struct LspConnection(mpsc::Sender<LspCommand>);
+pub struct LspConnection(mpsc::UnboundedSender<LspCommand>);
 
 impl LspConnection {
-    pub async fn send(&mut self, item: LspCommand) -> Result<(), SendError<LspCommand>> {
-        self.0.send(item).await
+    pub fn send(&mut self, item: LspCommand) {
+        // FIXME: This will crash the program if the stream has to reinit
+        self.0.send(item).unwrap()
     }
 }
 
 /// A message from the Stream to the gui
 #[derive(Debug, Clone)]
 pub enum LspMessage {
-    Initialised(LspConnection),
+    Initialized(LspConnection),
     Shutdown,
 
     Response(LspResponse),

@@ -6,18 +6,25 @@ use std::vec;
 use async_lsp::lsp_types::Url;
 use core::document::Document;
 use highlighter::HighlighterConfig;
+use tokio::sync::mpsc::error::SendError;
+use tracing::{debug, info, warn};
+
 use iced::keyboard::Key;
-
 use iced::widget::scrollable::Scrollbar;
-use iced::{Font, Length, Padding, Renderer, Subscription, Task};
-use laurel_common::{Element, LaurelTheme};
-use lsp::{LspClientNotification, LspMessage, LspServerNotification, Synchronise};
-use lsp::{LspCommand, LspConnection};
-use tracing::{debug, info};
-
-use core::position::{CursorMessage, Position};
 use iced::widget::{column, container, row, scrollable, text};
+use iced::{Font, Length, Padding, Renderer, Subscription, Task};
+
+use laurel_common::{
+    text::{CursorMessage, Position},
+    Element, LaurelTheme,
+};
+use laurel_lsp::{
+    LspClientNotification, LspCommand, LspConnection, LspMessage, LspServerNotification,
+    Synchronise,
+};
+
 use rfd::FileDialog;
+
 use widgets::modal::file_selector::Modal;
 use widgets::textbox::Textbox;
 use widgets::textbox_container::TextboxContainer;
@@ -26,7 +33,6 @@ use widgets::{layout, line_number};
 
 pub mod core;
 pub mod highlighter;
-pub mod lsp;
 pub mod styles;
 pub mod widgets;
 
@@ -34,6 +40,12 @@ pub mod widgets;
 pub enum KeyEvent {
     Special(Key, Modifiers),
     CharacterReceived(char),
+}
+
+impl<T> From<Result<(), SendError<T>>> for Message {
+    fn from(_: Result<(), SendError<T>>) -> Self {
+        Message::SendError
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +80,8 @@ pub enum Message {
     SelectFile,
     SelectFolder,
     Save,
+
+    SendError,
 }
 
 impl Message {
@@ -206,7 +220,7 @@ impl Editor {
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match self.process_event(message) {
-            Some(commands) => Task::batch(commands),
+            Some(tasks) => Task::batch(tasks),
             None => Task::none(),
         }
     }
@@ -256,7 +270,7 @@ impl Editor {
         //     events.push(lsp_events)
         // }
         Subscription::batch(vec![
-            Subscription::run(lsp::connect::connect).map(Message::LspMessage)
+            Subscription::run(laurel_lsp::connect).map(Message::LspMessage)
         ])
     }
 
@@ -266,72 +280,52 @@ impl Editor {
 }
 
 impl Editor {
-    fn open(&mut self, file: &str, old_file: Option<Url>, commands: &mut Vec<Task<Message>>) {
+    fn open(&mut self, file: &str, old_file: Option<Url>, tasks: &mut Vec<Task<Message>>) {
+        info!("Opening file {}", file);
+
         let document = Document::open(file).expect("Couldn't open file");
-        self.set_file(document, old_file, commands);
+        self.set_file(document, old_file);
     }
 
-    fn set_file(
-        &mut self,
-        document: Document,
-        old_file: Option<Url>,
-        commands: &mut Vec<Task<Message>>,
-    ) {
-        info!("set_file called {:?}", self.lsp);
-
+    fn set_file(&mut self, document: Document, old_file: Option<Url>) {
         let document_string = document.to_string();
-        let config = HighlighterConfig::rust_config(&document_string);
-        let file_uri = document.uri().clone();
-        let buffer = Buffer::new(document, config);
+        let highlighter_config = HighlighterConfig::rust_config(&document_string);
 
         if let Some(ref mut lsp_connection) = self.lsp {
             let mut lsp_connection = lsp_connection.clone();
-            let doc_string = buffer.get_string();
+
+            let file_uri = document.uri().clone();
 
             if let Some(old_file_uri) = old_file {
-                let fut = async move {
-                    lsp_connection
-                        .send(LspCommand::Notification(
-                            LspServerNotification::Synchronise(Synchronise::DidClose, old_file_uri),
-                        ))
-                        .await;
+                lsp_connection.send(LspCommand::Notification(
+                    LspServerNotification::Synchronise(Synchronise::DidClose, old_file_uri),
+                ));
 
-                    lsp_connection
-                        .send(LspCommand::Notification(
-                            LspServerNotification::Synchronise(
-                                Synchronise::DidOpen(doc_string),
-                                file_uri,
-                            ),
-                        ))
-                        .await;
-                };
-                let command = Task::perform(fut, Message::DocChanged);
-                commands.push(command);
+                lsp_connection.send(LspCommand::Notification(
+                    LspServerNotification::Synchronise(
+                        Synchronise::DidOpen(document_string),
+                        file_uri,
+                    ),
+                ));
             } else {
-                debug!("Should be here...");
-                let fut = async move {
-                    lsp_connection
-                        .send(LspCommand::Notification(
-                            LspServerNotification::Synchronise(
-                                Synchronise::DidOpen(doc_string),
-                                file_uri,
-                            ),
-                        ))
-                        .await;
-                };
-                let command = Task::perform(fut, |_| Message::None);
-                commands.push(command)
+                lsp_connection.send(LspCommand::Notification(
+                    LspServerNotification::Synchronise(
+                        Synchronise::DidOpen(document_string),
+                        file_uri,
+                    ),
+                ));
             }
         }
 
+        let buffer = Buffer::new(document, highlighter_config);
         self.text_box = Some(Textbox::new(buffer).font(Font::MONOSPACE).font_size(14.0));
     }
 
     fn process_event(&mut self, message: Message) -> Option<Vec<Task<Message>>> {
-        let mut commands: Vec<Task<Message>> = Vec::new();
+        let mut tasks: Vec<Task<Message>> = Vec::new();
         match message {
             Message::KeyEvent(event) => {
-                self.process_keyboard_event(event, &mut commands);
+                self.process_keyboard_event(event, &mut tasks);
             }
             Message::CursorEvent(pos) => {
                 let textbox = self.can_edit_textbox()?.set_selection(pos).set_curor(pos);
@@ -366,7 +360,7 @@ impl Editor {
                 self.can_edit_textbox()?.insert(value);
             }
             Message::Open(file) => {
-                self.change_file(file, &mut commands);
+                self.change_file(file, &mut tasks);
             }
             Message::LspNotification(notification) => {
                 self.can_edit_textbox()?
@@ -380,7 +374,7 @@ impl Editor {
                 let file = self.open_file(None);
                 if let Some(file) = file {
                     if let Some(file) = file.as_path().to_str() {
-                        self.change_file(file.to_owned(), &mut commands)
+                        self.change_file(file.to_owned(), &mut tasks)
                     }
                 }
             }
@@ -390,8 +384,9 @@ impl Editor {
                 if let Some(textbox) = self.text_box.as_mut() {
                     textbox.save();
                     let file_path = textbox.buffer().document().uri().clone();
-                    // Save command
-                    self.lsp.as_mut()?.send(LspCommand::Notification(
+                    let mut lsp = self.lsp.clone()?;
+
+                    lsp.send(LspCommand::Notification(
                         LspServerNotification::Synchronise(Synchronise::DidSave(None), file_path),
                     ));
                 }
@@ -411,13 +406,19 @@ impl Editor {
             Message::Done(_) => (),
             Message::None => {}
             Message::LspMessage(m) => match m {
-                LspMessage::Initialised(conn) => {
-                    debug!(connection = ?conn, "Lsp stream connection initialised");
+                LspMessage::Initialized(conn) => {
+                    debug!(connection = ?conn, "Lsp stream connection initialized");
                     self.lsp = Some(conn);
                 }
-                LspMessage::Notification(_n) => {}
-                LspMessage::Response(_r) => {}
-                LspMessage::Shutdown => (),
+                LspMessage::Notification(n) => {
+                    info!(notification = ?n, "Notification from LSP");
+                }
+                LspMessage::Response(r) => {
+                    info!(response = ?r, "Response from LSP")
+                }
+                LspMessage::Shutdown => {
+                    warn!("Lsp shutdown");
+                }
             },
 
             _ => {}
@@ -425,10 +426,10 @@ impl Editor {
         if let Some(textbox) = self.text_box.as_mut() {
             textbox.correct_position();
             let window = textbox.buffer().window;
-            self.correct_scroll(&mut commands, window);
+            self.correct_scroll(&mut tasks, window);
         }
 
-        Some(commands)
+        Some(tasks)
     }
 
     fn no_workspace_view<'a>(&self) -> Element<'a, Message, Renderer> {
@@ -457,7 +458,7 @@ impl Editor {
     fn process_keyboard_event(
         &mut self,
         event: KeyEvent,
-        _commands: &mut Vec<Task<Message>>,
+        _tasks: &mut Vec<Task<Message>>,
     ) -> Option<()> {
         match event {
             // KeyEvent::Special(key, modifiers) => {
@@ -594,7 +595,7 @@ impl Editor {
         None
     }
 
-    fn change_file(&mut self, file: String, commands: &mut Vec<Task<Message>>) {
+    fn change_file(&mut self, file: String, tasks: &mut Vec<Task<Message>>) {
         let old_file = self
             .text_box
             .as_ref()
@@ -603,7 +604,7 @@ impl Editor {
             .map(Document::uri)
             .map(ToOwned::to_owned);
 
-        self.open(&file, old_file, commands);
+        self.open(&file, old_file, tasks);
         self.modal = None;
     }
 
@@ -701,14 +702,14 @@ impl Editor {
     //     )
     // }
 
-    fn correct_scroll(&self, commands: &mut Vec<Task<Message>>, window: VirtualWindow) {
+    fn correct_scroll(&self, tasks: &mut Vec<Task<Message>>, window: VirtualWindow) {
         let id = iced::widget::scrollable::Id::new("1");
         let scroll_command: Task<Message> = iced::widget::scrollable::scroll_to(id, window.into());
-        commands.push(scroll_command);
+        tasks.push(scroll_command);
 
         let id = iced::widget::scrollable::Id::new("2");
         let scroll_command: Task<Message> = iced::widget::scrollable::scroll_to(id, window.into());
-        commands.push(scroll_command);
+        tasks.push(scroll_command);
     }
 
     /**

@@ -1,5 +1,6 @@
 pub mod action;
 pub mod appearance;
+pub mod text;
 
 pub use appearance::LaurelTheme;
 

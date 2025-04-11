@@ -1,4 +1,5 @@
-use super::{document::ByteRange, selection::Range};
+use super::document::ByteRange;
+use laurel_common::text::Range;
 
 pub struct DocumentChange {
     pub range: Range,

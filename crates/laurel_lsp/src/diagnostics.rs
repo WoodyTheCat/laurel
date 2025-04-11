@@ -1,7 +1,7 @@
 use async_lsp::lsp_types::{self, DiagnosticSeverity, Url};
 use iced::Color;
 
-use crate::core::{position::Position, selection::Range};
+use laurel_common::text::{Position, Range};
 
 #[derive(Debug, Clone)]
 pub struct ClientDiagnostics {

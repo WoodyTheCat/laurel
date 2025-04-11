@@ -2,7 +2,9 @@ use ropey::RopeSlice;
 use std::ops;
 use tree_sitter::{InputEdit, Parser, Query, QueryCursor, Range, Tree};
 
-use crate::core::{document::Document, position::Position};
+use crate::core::document::Document;
+use laurel_common::text::Position;
+
 pub mod color_selector;
 
 pub struct HighlighterConfig {

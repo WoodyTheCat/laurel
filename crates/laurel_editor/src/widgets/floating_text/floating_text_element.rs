@@ -5,7 +5,8 @@ use iced::widget::{
 };
 use laurel_common::{appearance, Element};
 
-use crate::{core::position::Position, Message};
+use crate::Message;
+use laurel_common::text::Position;
 
 #[derive(Clone, Debug)]
 pub struct FloatingElement {
