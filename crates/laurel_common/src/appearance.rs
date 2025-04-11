@@ -64,4 +64,8 @@ impl iced::theme::Base for LaurelTheme {
             text_color: self.text,
         }
     }
+
+    fn palette(&self) -> Option<iced::theme::Palette> {
+        None
+    }
 }
