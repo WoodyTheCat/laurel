@@ -1,3 +1,4 @@
+pub mod action;
 pub mod appearance;
 
 pub use appearance::LaurelTheme;
@@ -19,6 +20,7 @@ pub mod fonts {
     use iced::Font;
     use std::borrow::Cow;
 
+    pub const DEFAULT: Font = Font::with_name("Inter_18pt-Regular");
     pub const ICON: Font = Font::with_name("lucide");
 
     pub fn load() -> Vec<Cow<'static, [u8]>> {
@@ -32,6 +34,9 @@ pub mod fonts {
             // include_bytes!("../fonts/iosevka-term-italic.ttf")
             //     .as_slice()
             //     .into(),
+            include_bytes!("../../../data/inter/Inter_18pt-Regular.ttf")
+                .as_slice()
+                .into(),
             include_bytes!("../../../data/lucide.ttf").as_slice().into(),
         ]
     }

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/laurel_*"]
 resolver = "2"
 edition = "2024"
 
@@ -14,8 +14,17 @@ iced = { version = "0.14.0-dev", default-features = false, features = [
   "lazy",
   "advanced",
   "image",
+  "tokio",
 ] }
+iced_graphics = "0.14.0-dev"
+iced_highlighter = "0.14.0-dev"
+
+# Laurel
 laurel_common = { path = "crates/laurel_common" }
+laurel_editor = { path = "crates/laurel_editor" }
+laurel_lsp = { path = "crates/laurel_lsp" }
 
 [patch.crates-io]
 iced = { git = "https://github.com/iced-rs/iced.git" }
+iced_graphics = { git = "https://github.com/iced-rs/iced.git" }
+iced_highlighter = { git = "https://github.com/iced-rs/iced.git" }
